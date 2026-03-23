@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "iql-image-generator",
+      "runtimeExecutable": "C:\\Users\\Alex\\AppData\\Local\\ms-playwright-go\\1.50.1\\node.exe",
+      "runtimeArgs": ["--env-file=.env", "server.js"],
+      "port": 3000
+    }
+  ]
+}
