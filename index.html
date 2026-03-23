@@ -6,6 +6,24 @@
     <title>IQL Image Generator</title>
 
     <!-- IQL Brand Fonts -->
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/iql-logo-color.svg">
+
+    <!-- Open Graph / Link Preview -->
+    <meta property="og:type"         content="website">
+    <meta property="og:url"          content="https://iql-image-generator.onrender.com">
+    <meta property="og:title"        content="IQL Image Generator">
+    <meta property="og:description"  content="Generate professional AI images — powered by IQL">
+    <meta property="og:image"        content="https://iql-image-generator.onrender.com/assets/og-image.svg">
+    <meta property="og:image:width"  content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="IQL Image Generator">
+    <meta name="twitter:description" content="Generate professional AI images — powered by IQL">
+    <meta name="twitter:image"       content="https://iql-image-generator.onrender.com/assets/og-image.svg">
+
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,7 +38,7 @@
                             blue:      '#272663',
                             lightRed:  '#feecec',
                             lightBlue: '#b9ceff',
-                            muted:     '#9392af',
+                            muted:     '#504e72',
                         }
                     },
                     fontFamily: {
@@ -114,6 +132,13 @@
         /* ── Bottom bar safe-area padding (iPhone) ────────── */
         .bottom-bar { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 
+        /* ── Bouncing arrow (placeholder hint) ──────────── */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(7px); }
+        }
+        .bounce { animation: bounce 1.4s ease-in-out infinite; }
+
         /* ── Help modal animations ───────────────────────── */
         @keyframes overlayIn  { from { opacity: 0; }              to { opacity: 1; } }
         @keyframes sheetUp    { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -192,6 +217,15 @@
             <p class="font-bold text-iql-blue text-base sm:text-lg" id="placeholder-title">צור את התמונה שלך</p>
             <p class="text-iql-muted text-sm mt-1 leading-relaxed" id="placeholder-body">בחר סגנון, כתוב תיאור ולחץ על יצירה.</p>
             <p id="accent-text" class="font-accent text-iql-red text-3xl mt-3 opacity-70 select-none" lang="en">Make it Priceless</p>
+
+            <!-- Bouncing arrow pointing to input below -->
+            <div class="bounce mt-5 flex justify-center text-iql-muted opacity-60">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <polyline points="19 12 12 19 5 12"/>
+                </svg>
+            </div>
         </div>
 
         <!-- Loading overlay -->
@@ -206,13 +240,16 @@
              class="hidden max-h-full max-w-full object-contain p-3 sm:p-6 fade-in"
              src="" alt="">
 
-        <!-- Download button -->
+    </main>
+
+    <!-- Download bar (shown below image after generation) -->
+    <div id="download-bar"
+         class="hidden bg-white border-t border-gray-100 px-4 sm:px-6 py-2 flex items-center justify-center z-20 flex-shrink-0">
         <a id="download-btn"
-           class="hidden absolute top-3 end-3 sm:top-4 sm:end-4
-                  bg-iql-blue hover:bg-iql-blue/90 text-white
-                  px-3 py-2 rounded-lg text-xs sm:text-sm font-medium
-                  transition-all shadow-md flex items-center gap-1.5 z-10 no-underline">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+           class="bg-iql-blue hover:bg-iql-blue/90 text-white
+                  px-5 py-2 rounded-xl text-sm font-medium
+                  transition-all shadow-md flex items-center gap-2 no-underline">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
                  fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
@@ -220,7 +257,7 @@
             </svg>
             <span id="download-text" lang="he">הורדה</span>
         </a>
-    </main>
+    </div>
 
     <!-- ══════════════════════════════════════ BOTTOM CONTROLS BAR -->
     <div class="bg-white border-t border-gray-100 px-4 sm:px-6 pt-3 flex-shrink-0 z-30 bottom-bar"
@@ -432,6 +469,7 @@
     const promptInput      = $('prompt-input');
     const genBtn           = $('gen-btn');
     const genLabel         = $('gen-label');
+    const downloadBar      = $('download-bar');
     const helpModal        = $('help-modal');
 
     // ── Style chips ─────────────────────────────────────────────────────────────
@@ -590,7 +628,7 @@
         placeholderEl.classList.add('hidden');
         qWatermark.classList.add('hidden');
         resultImage.classList.add('hidden');
-        downloadBtn.classList.add('hidden');
+        downloadBar.classList.add('hidden');
         genBtn.disabled = true;
         genBtn.classList.add('opacity-60', 'cursor-not-allowed');
 
@@ -622,7 +660,7 @@
                 loadingEl.classList.add('hidden');
                 resultImage.classList.remove('hidden');
                 resultImage.classList.add('fade-in');
-                downloadBtn.classList.remove('hidden');
+                downloadBar.classList.remove('hidden');
             };
             resultImage.onerror = () => {
                 loadingEl.classList.add('hidden');
@@ -638,6 +676,7 @@
             loadingEl.classList.add('hidden');
             placeholderEl.classList.remove('hidden');
             qWatermark.classList.remove('hidden');
+            downloadBar.classList.add('hidden');
         } finally {
             genBtn.disabled = false;
             genBtn.classList.remove('opacity-60', 'cursor-not-allowed');
