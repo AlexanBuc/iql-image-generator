@@ -36,12 +36,9 @@
         :lang(he) { font-family: Calibri, Arial, sans-serif; }
         :lang(en) { font-family: 'DM Sans', Arial, sans-serif; }
 
-        /* ── Full viewport — uses dynamic height on mobile ── */
-        html, body {
-            height: 100%;
-        }
+        /* ── Full viewport ───────────────────────────────── */
+        html, body { height: 100%; }
         body {
-            /* dvh = accounts for mobile browser chrome shrink/expand */
             height: 100dvh;
             display: flex;
             flex-direction: column;
@@ -50,7 +47,7 @@
             color: #272663;
         }
 
-        /* ── Grain texture overlay (like SHIELDbot) ─────── */
+        /* ── Grain texture overlay ───────────────────────── */
         body::after {
             content: '';
             position: fixed;
@@ -87,8 +84,7 @@
             line-height: 1;
             user-select: none;
             pointer-events: none;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             font-family: 'DM Sans', Arial, sans-serif;
         }
@@ -101,17 +97,21 @@
         }
         .shake { animation: shake 0.3s ease; }
 
-        /* ── Fade-in for transitions ─────────────────────── */
+        /* ── Fade-in ─────────────────────────────────────── */
         .fade-in { animation: fadeIn 0.35s cubic-bezier(0.16,1,0.3,1); }
         @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
-        /* ── Accent font for decorative use ──────────────── */
+        /* ── Accent font ─────────────────────────────────── */
         .font-accent { font-family: 'Caveat', cursive; }
 
-        /* ── Bottom bar safe-area padding (iPhone notch) ─── */
-        .bottom-bar {
-            padding-bottom: max(1rem, env(safe-area-inset-bottom));
-        }
+        /* ── Bottom bar safe-area padding (iPhone) ────────── */
+        .bottom-bar { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+
+        /* ── Help modal animations ───────────────────────── */
+        @keyframes overlayIn  { from { opacity: 0; }              to { opacity: 1; } }
+        @keyframes sheetUp    { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-overlay { animation: overlayIn 0.2s ease; }
+        .modal-sheet   { animation: sheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 </head>
 
@@ -122,24 +122,46 @@
 
         <!-- Logo + title -->
         <div class="flex items-center gap-3">
-            <div class="flex items-center leading-none select-none" aria-label="IQL">
-                <span class="font-bold text-xl text-white tracking-tight">I</span>
-                <span class="font-bold text-xl text-iql-red  tracking-tight">Q</span>
-                <span class="font-bold text-xl text-white tracking-tight">L</span>
+            <!-- SVG logo — falls back to text mark if file not found -->
+            <img id="logo-svg"
+                 src="/assets/iql-logo-white.svg"
+                 alt="IQL"
+                 class="h-7 sm:h-8 w-auto"
+                 onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';">
+            <div id="logo-fallback" class="items-center leading-none select-none" style="display:none" aria-label="IQL">
+                <span class="font-bold text-xl text-white  tracking-tight">I</span>
+                <span class="font-bold text-xl text-iql-red tracking-tight">Q</span>
+                <span class="font-bold text-xl text-white  tracking-tight">L</span>
             </div>
+
             <div class="w-px h-5 bg-white/25 flex-shrink-0"></div>
             <span class="text-sm font-medium text-white/80 tracking-wide" id="header-title" lang="he">מחולל תמונות</span>
         </div>
 
-        <!-- Right side: subtitle + lang toggle -->
-        <div class="flex items-center gap-3">
+        <!-- Right side controls -->
+        <div class="flex items-center gap-2">
             <span class="text-[11px] text-white/35 hidden sm:block tracking-widest uppercase" id="header-subtitle" lang="he">המכון למנהיגות איכותית</span>
-            <button
-                onclick="toggleLanguage()"
-                id="lang-btn"
-                class="px-3 py-1.5 rounded-lg bg-white border border-white/80
-                       text-xs font-bold uppercase tracking-wider text-iql-blue
-                       shadow-sm hover:bg-iql-lightRed transition-all">
+
+            <!-- Help button -->
+            <button onclick="openHelp()"
+                    id="help-btn"
+                    aria-label="Help"
+                    class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white
+                           transition-all flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                    <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
+                </svg>
+            </button>
+
+            <!-- Language toggle -->
+            <button onclick="toggleLanguage()"
+                    id="lang-btn"
+                    class="px-3 py-1.5 rounded-lg bg-white border border-white/80
+                           text-xs font-bold uppercase tracking-wider text-iql-blue
+                           shadow-sm hover:bg-iql-lightRed transition-all">
                 English
             </button>
         </div>
@@ -148,7 +170,6 @@
     <!-- ═══════════════════════════════════════════════ IMAGE AREA -->
     <main class="flex-1 relative flex items-center justify-center overflow-hidden bg-white min-h-0">
 
-        <!-- Q watermark (shown only on placeholder state) -->
         <span class="q-watermark" id="q-watermark" aria-hidden="true">Q</span>
 
         <!-- Placeholder -->
@@ -163,14 +184,11 @@
             </div>
             <p class="font-bold text-iql-blue text-base sm:text-lg" id="placeholder-title">צור את התמונה שלך</p>
             <p class="text-iql-muted text-sm mt-1 leading-relaxed" id="placeholder-body">בחר סגנון, כתוב תיאור ולחץ על יצירה.</p>
-
-            <!-- Decorative accent -->
             <p class="font-accent text-iql-red text-2xl mt-3 opacity-60 select-none">Make it Priceless</p>
         </div>
 
         <!-- Loading overlay -->
-        <div id="loading"
-             class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/92 backdrop-blur-sm z-20">
+        <div id="loading" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm z-20">
             <div class="loader mb-4"></div>
             <span class="text-sm font-bold text-iql-red tracking-wide" id="loading-text" lang="he">יוצר את התמונה שלך...</span>
         </div>
@@ -201,43 +219,102 @@
     <div class="bg-white border-t border-gray-100 px-4 sm:px-6 pt-3 flex-shrink-0 z-30 bottom-bar"
          style="box-shadow: 0 -4px 20px rgba(39,38,99,0.06);">
 
-        <!-- Style chips (horizontally scrollable) -->
         <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"
-             id="style-container"
-             role="group"
-             aria-label="סגנונות"></div>
+             id="style-container" role="group" aria-label="סגנונות"></div>
 
-        <!-- Prompt input + Generate button -->
         <div class="flex gap-2 mt-2 max-w-3xl mx-auto pb-1">
-            <input
-                type="text"
-                id="prompt-input"
-                autocomplete="off"
-                autocorrect="off"
-                spellcheck="false"
-                lang="he"
-                class="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3
-                       text-sm text-iql-blue bg-white
-                       focus:outline-none focus:border-iql-red focus:ring-2 focus:ring-iql-red/20
-                       transition-all placeholder:text-iql-muted">
+            <input type="text" id="prompt-input"
+                   autocomplete="off" autocorrect="off" spellcheck="false" lang="he"
+                   class="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3
+                          text-sm text-iql-blue bg-white
+                          focus:outline-none focus:border-iql-red focus:ring-2 focus:ring-iql-red/20
+                          transition-all placeholder:text-iql-muted">
 
-            <button
-                onclick="generateImage()"
-                id="gen-btn"
-                aria-label="Generate"
-                class="bg-iql-red hover:bg-iql-redHover text-white
-                       px-4 sm:px-5 py-3 rounded-xl
-                       font-medium text-sm transition-all active:scale-95
-                       flex items-center gap-2 flex-shrink-0
-                       shadow-md shadow-red-200/60 min-w-[48px]">
-                <!-- Zap icon -->
+            <button onclick="generateImage()" id="gen-btn" aria-label="Generate"
+                    class="bg-iql-red hover:bg-iql-redHover text-white
+                           px-4 sm:px-5 py-3 rounded-xl font-medium text-sm
+                           transition-all active:scale-95 flex items-center gap-2
+                           flex-shrink-0 shadow-md shadow-red-200/60 min-w-[48px]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                     fill="currentColor" stroke="currentColor" stroke-width="0.5"
-                     stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                     fill="currentColor" stroke="currentColor" stroke-width="0.5" class="flex-shrink-0">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                 </svg>
                 <span id="gen-label" class="hidden sm:inline" lang="he">צור</span>
             </button>
+        </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════ HELP MODAL -->
+    <div id="help-modal"
+         class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+         style="background: rgba(39,38,99,0.55); backdrop-filter: blur(4px);"
+         onclick="closeHelp(event)">
+
+        <div class="modal-sheet bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl
+                    max-h-[88vh] overflow-y-auto shadow-2xl no-scrollbar"
+             onclick="event.stopPropagation()">
+
+            <!-- Modal header -->
+            <div class="bg-iql-blue px-5 pt-5 pb-4 rounded-t-3xl sm:rounded-t-2xl flex items-start justify-between sticky top-0 z-10">
+                <div>
+                    <h2 id="help-title" class="text-white font-bold text-base sm:text-lg" lang="he">איך להשתמש</h2>
+                    <p id="help-subtitle" class="text-white/55 text-xs mt-0.5" lang="he">מדריך קצר</p>
+                </div>
+                <button onclick="closeHelp()"
+                        class="text-white/50 hover:text-white transition-colors p-1 mt-0.5 -me-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="px-5 py-5 space-y-6">
+
+                <!-- ── Steps ─────────────────────────────────── -->
+                <div>
+                    <p id="help-steps-title"
+                       class="text-[11px] font-bold text-iql-muted uppercase tracking-wider mb-3" lang="he">
+                        שלושה שלבים פשוטים
+                    </p>
+                    <div class="space-y-3" id="steps-container">
+                        <!-- injected by JS -->
+                    </div>
+                </div>
+
+                <!-- ── Dialogue tip ───────────────────────────── -->
+                <div class="bg-iql-lightRed rounded-2xl p-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-iql-red rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                 fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+                                <path d="M12 16v-4"/><path d="M12 8h.01"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p id="tip-title" class="text-iql-blue font-bold text-sm" lang="he">טיפ מקצועי</p>
+                            <p id="tip-body" class="text-iql-blue/80 text-sm mt-1 leading-relaxed" lang="he">
+                                נהל דיאלוג עם המחולל. תאר ← צור ← שפר את התיאור ← צור שוב. כל איטרציה מקרבת אותך לתמונה המושלמת.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Example prompts ────────────────────────── -->
+                <div>
+                    <p id="help-examples-title"
+                       class="text-[11px] font-bold text-iql-muted uppercase tracking-wider mb-3" lang="he">
+                        דוגמאות — לחץ כדי לנסות
+                    </p>
+                    <div class="space-y-2" id="examples-container">
+                        <!-- injected by JS -->
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -257,7 +334,27 @@
             promptPlaceholder:  'Describe your image…',
             genLabel:           'Generate',
             stylesLabel:        'Styles',
-            styleNames: ['Realistic','Anime','Cyberpunk','Oil Painting','3D Render','Watercolor'],
+            styleNames:         ['Realistic','Anime','Cyberpunk','Oil Painting','3D Render','Watercolor'],
+            // Help modal
+            helpTitle:          'How to use',
+            helpSubtitle:       'Quick guide',
+            helpStepsTitle:     'Three simple steps',
+            helpExamplesTitle:  'Examples — tap to try',
+            tipTitle:           'Pro tip',
+            tipBody:            'Have a dialogue with the generator. Describe → Generate → Refine your description → Generate again. Each iteration gets you closer to the perfect image.',
+            steps: [
+                { title: 'Choose a style',       body: 'Tap one of the style chips at the bottom of the screen.' },
+                { title: 'Describe your image',  body: 'Write what you want to see. Be specific about mood, setting, and details.' },
+                { title: 'Generate',             body: 'Tap Generate (or press Enter) and wait a few seconds.' },
+            ],
+            examples: [
+                'A diverse team celebrating project success in a bright modern office',
+                'A confident leader presenting a vision to an engaged audience',
+                'Two professionals shaking hands in a sunlit conference room',
+                'A group collaborating around a table with laptops and sticky notes',
+                'A person looking out at a mountain horizon, feeling inspired',
+                'A sunrise over a city skyline, symbolizing new beginnings',
+            ],
         },
         he: {
             headerTitle:        'מחולל תמונות',
@@ -270,11 +367,31 @@
             promptPlaceholder:  'תאר את התמונה שלך…',
             genLabel:           'צור',
             stylesLabel:        'סגנונות',
-            styleNames: ['ריאליסטי','אנימה','סייברפאנק','ציור שמן','תלת מימד','אקוורל'],
+            styleNames:         ['ריאליסטי','אנימה','סייברפאנק','ציור שמן','תלת מימד','אקוורל'],
+            // Help modal
+            helpTitle:          'איך להשתמש',
+            helpSubtitle:       'מדריך קצר',
+            helpStepsTitle:     'שלושה שלבים פשוטים',
+            helpExamplesTitle:  'דוגמאות — לחץ כדי לנסות',
+            tipTitle:           'טיפ מקצועי',
+            tipBody:            'נהל דיאלוג עם המחולל. תאר ← צור ← שפר את התיאור ← צור שוב. כל איטרציה מקרבת אותך לתמונה המושלמת.',
+            steps: [
+                { title: 'בחר סגנון',         body: 'לחץ על אחד מהשבבים בתחתית המסך.' },
+                { title: 'תאר את התמונה',     body: 'כתוב מה שאתה רוצה לראות. היה ספציפי לגבי מצב רוח, סביבה ופרטים.' },
+                { title: 'לחץ על יצירה',      body: 'לחץ על צור (או Enter) ומתן כמה שניות.' },
+            ],
+            examples: [
+                'צוות מגוון חוגג הצלחת פרויקט במשרד מודרני ובהיר',
+                'מנהיג בטוח מציג חזון בפני קהל מעורב',
+                'שני אנשי מקצוע לוחצים ידיים בחדר ישיבות מואר שמש',
+                'קבוצה משתפת פעולה סביב שולחן עם מחשבים ודפי פתקים',
+                'אדם מביט אל אופק הרים, מרגיש השראה',
+                'זריחה מעל קו רקיע עירוני, המסמלת התחלות חדשות',
+            ],
         }
     };
 
-    // ── Style definitions (suffixes always English for best AI results) ────────
+    // ── Style definitions ───────────────────────────────────────────────────────
     const STYLE_IDS = ['Realistic','Anime','Cyberpunk','OilPainting','3D','Watercolor'];
     const STYLE_SUFFIXES = [
         'highly detailed, photorealistic, 8k, natural lighting',
@@ -285,35 +402,35 @@
         'watercolor painting, soft edges, pastel tones, artistic',
     ];
 
-    // ── State ──────────────────────────────────────────────────────────────────
+    // ── State ───────────────────────────────────────────────────────────────────
     let lang         = 'he';
-    let currentStyle = 0; // index into STYLE_IDS
+    let currentStyle = 0;
 
-    // ── DOM refs ───────────────────────────────────────────────────────────────
+    // ── DOM refs ────────────────────────────────────────────────────────────────
     const $ = id => document.getElementById(id);
-    const htmlEl          = document.documentElement;
-    const headerTitle     = $('header-title');
-    const headerSubtitle  = $('header-subtitle');
-    const langBtn         = $('lang-btn');
-    const placeholderEl   = $('placeholder');
-    const placeholderTitle= $('placeholder-title');
-    const placeholderBody = $('placeholder-body');
-    const loadingEl       = $('loading');
-    const loadingText     = $('loading-text');
-    const resultImage     = $('result-image');
-    const qWatermark      = $('q-watermark');
-    const downloadBtn     = $('download-btn');
-    const downloadText    = $('download-text');
-    const styleContainer  = $('style-container');
-    const promptInput     = $('prompt-input');
-    const genBtn          = $('gen-btn');
-    const genLabel        = $('gen-label');
+    const htmlEl           = document.documentElement;
+    const headerTitle      = $('header-title');
+    const headerSubtitle   = $('header-subtitle');
+    const langBtn          = $('lang-btn');
+    const placeholderEl    = $('placeholder');
+    const placeholderTitle = $('placeholder-title');
+    const placeholderBody  = $('placeholder-body');
+    const loadingEl        = $('loading');
+    const loadingText      = $('loading-text');
+    const resultImage      = $('result-image');
+    const qWatermark       = $('q-watermark');
+    const downloadBtn      = $('download-btn');
+    const downloadText     = $('download-text');
+    const styleContainer   = $('style-container');
+    const promptInput      = $('prompt-input');
+    const genBtn           = $('gen-btn');
+    const genLabel         = $('gen-label');
+    const helpModal        = $('help-modal');
 
-    // ── Build initial style chips ──────────────────────────────────────────────
+    // ── Style chips ─────────────────────────────────────────────────────────────
     function buildStyleChips() {
         styleContainer.innerHTML = '';
-        const s = STRINGS[lang];
-        styleContainer.setAttribute('aria-label', s.stylesLabel);
+        styleContainer.setAttribute('aria-label', STRINGS[lang].stylesLabel);
         STYLE_IDS.forEach((id, i) => {
             const btn = document.createElement('button');
             btn.dataset.idx = i;
@@ -351,53 +468,107 @@
         });
     }
 
-    // ── Language toggle ────────────────────────────────────────────────────────
+    // ── Language toggle ─────────────────────────────────────────────────────────
     function toggleLanguage() {
         lang = lang === 'he' ? 'en' : 'he';
         applyLanguage();
     }
 
     function applyLanguage() {
-        const s = STRINGS[lang];
+        const s   = STRINGS[lang];
         const isHe = lang === 'he';
 
         htmlEl.lang = lang;
         htmlEl.dir  = isHe ? 'rtl' : 'ltr';
 
-        // Header
-        headerTitle.textContent   = s.headerTitle;
-        headerTitle.lang          = lang;
-        headerSubtitle.textContent= s.headerSubtitle;
-        headerSubtitle.lang       = lang;
-        langBtn.textContent       = s.langBtn;
-
-        // Placeholder
-        placeholderEl.lang        = lang;
+        headerTitle.textContent      = s.headerTitle;      headerTitle.lang = lang;
+        headerSubtitle.textContent   = s.headerSubtitle;   headerSubtitle.lang = lang;
+        langBtn.textContent          = s.langBtn;
+        placeholderEl.lang           = lang;
         placeholderTitle.textContent = s.placeholderTitle;
         placeholderBody.textContent  = s.placeholderBody;
+        loadingText.textContent      = s.loadingText;      loadingText.lang = lang;
+        downloadText.textContent     = s.downloadText;     downloadText.lang = lang;
+        promptInput.placeholder      = s.promptPlaceholder;
+        promptInput.lang             = lang;
+        promptInput.dir              = isHe ? 'rtl' : 'ltr';
+        genLabel.textContent         = s.genLabel;         genLabel.lang = lang;
 
-        // Loading
-        loadingText.textContent   = s.loadingText;
-        loadingText.lang          = lang;
-
-        // Download
-        downloadText.textContent  = s.downloadText;
-        downloadText.lang         = lang;
-
-        // Input
-        promptInput.placeholder   = s.promptPlaceholder;
-        promptInput.lang          = lang;
-        promptInput.dir           = isHe ? 'rtl' : 'ltr';
-
-        // Generate button
-        genLabel.textContent      = s.genLabel;
-        genLabel.lang             = lang;
-
-        // Style chips
         updateChipLabels();
+        updateHelpModal();
     }
 
-    // ── Image generation ───────────────────────────────────────────────────────
+    // ── Help modal ──────────────────────────────────────────────────────────────
+    function openHelp() {
+        updateHelpModal();
+        helpModal.classList.remove('hidden');
+        document.addEventListener('keydown', onEsc);
+    }
+
+    function closeHelp(e) {
+        if (e && e.target !== helpModal) return; // only close on backdrop click
+        helpModal.classList.add('hidden');
+        document.removeEventListener('keydown', onEsc);
+    }
+
+    function onEsc(e) { if (e.key === 'Escape') { helpModal.classList.add('hidden'); document.removeEventListener('keydown', onEsc); } }
+
+    function updateHelpModal() {
+        const s   = STRINGS[lang];
+        const isHe = lang === 'he';
+
+        $('help-title').textContent         = s.helpTitle;
+        $('help-subtitle').textContent      = s.helpSubtitle;
+        $('help-steps-title').textContent   = s.helpStepsTitle;
+        $('help-examples-title').textContent= s.helpExamplesTitle;
+        $('tip-title').textContent          = s.tipTitle;
+        $('tip-body').textContent           = s.tipBody;
+
+        // Set lang attrs
+        ['help-title','help-subtitle','help-steps-title','help-examples-title','tip-title','tip-body'].forEach(id => {
+            $(id).lang = lang;
+        });
+
+        // Steps
+        const stepsEl = $('steps-container');
+        stepsEl.innerHTML = '';
+        stepsEl.dir = isHe ? 'rtl' : 'ltr';
+        s.steps.forEach((step, i) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-start gap-3';
+            row.innerHTML = `
+                <div class="w-7 h-7 rounded-full bg-iql-lightRed flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span class="text-iql-blue font-bold text-xs">${i + 1}</span>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-iql-blue" lang="${lang}">${step.title}</p>
+                    <p class="text-xs text-iql-muted mt-0.5 leading-relaxed" lang="${lang}">${step.body}</p>
+                </div>`;
+            stepsEl.appendChild(row);
+        });
+
+        // Example prompts
+        const exEl = $('examples-container');
+        exEl.innerHTML = '';
+        exEl.dir = isHe ? 'rtl' : 'ltr';
+        s.examples.forEach(prompt => {
+            const btn = document.createElement('button');
+            btn.className = `w-full text-start px-4 py-3 rounded-xl border border-gray-100
+                             bg-white hover:border-iql-blue hover:bg-iql-lightBlue/20
+                             text-sm text-iql-blue transition-all`;
+            btn.setAttribute('lang', lang);
+            btn.textContent = prompt;
+            btn.onclick = () => {
+                promptInput.value = prompt;
+                helpModal.classList.add('hidden');
+                document.removeEventListener('keydown', onEsc);
+                promptInput.focus();
+            };
+            exEl.appendChild(btn);
+        });
+    }
+
+    // ── Image generation ────────────────────────────────────────────────────────
     async function generateImage() {
         const prompt = promptInput.value.trim();
 
@@ -408,7 +579,6 @@
             return;
         }
 
-        // Loading state
         loadingEl.classList.remove('hidden');
         placeholderEl.classList.add('hidden');
         qWatermark.classList.add('hidden');
@@ -467,14 +637,11 @@
         }
     }
 
-    // Enter key
-    promptInput.addEventListener('keypress', e => {
-        if (e.key === 'Enter') generateImage();
-    });
+    promptInput.addEventListener('keypress', e => { if (e.key === 'Enter') generateImage(); });
 
-    // ── Init ───────────────────────────────────────────────────────────────────
+    // ── Init ────────────────────────────────────────────────────────────────────
     buildStyleChips();
-    applyLanguage(); // sets initial Hebrew state
+    applyLanguage();
     </script>
 </body>
 </html>
