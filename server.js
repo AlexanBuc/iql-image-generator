@@ -65,6 +65,7 @@ const server = http.createServer(async (req, res) => {
         req.on('end', async () => {
             try {
                 const parsed = JSON.parse(body);
+                parsed.model = 'gpt-image-2-2026-04-21';   // force the image model server-side
                 const data   = await callOpenAI(parsed);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify(data));
